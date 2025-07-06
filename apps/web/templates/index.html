@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ agent_name }} - AI Personal Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid h-100">
+        <div class="row h-100">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar p-3">
+                <div class="d-flex align-items-center mb-4">
+                    <i class="fas fa-robot text-primary me-2 fs-4"></i>
+                    <h5 class="mb-0">{{ agent_name }}</h5>
+                </div>
+                
+                <!-- Model Selection -->
+                <div class="mb-3">
+                    <label class="form-label small">Model AI:</label>
+                    <select class="form-select form-select-sm" id="modelSelect">
+                        {% for model in available_models %}
+                        <option value="{{ model }}" {% if model == 'openai' %}selected{% endif %}>
+                            {% if model == 'openai' %}OpenAI GPT{% else %}Google Gemini{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Persona Selection -->
+                <div class="mb-3">
+                    <label class="form-label small">Persona:</label>
+                    <select class="form-select form-select-sm" id="personaSelect">
+                        {% for persona in available_personas %}
+                        <option value="{{ persona }}" {% if persona == 'personal' %}selected{% endif %}>
+                            {% if persona == 'personal' %}Personal Assistant
+                            {% elif persona == 'research' %}Research Assistant
+                            {% else %}Technical Assistant{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Agent Status -->
+                <div class="card mb-3">
+                    <div class="card-body p-2">
+                        <h6 class="card-title small mb-2">Status Agent</h6>
+                        <div class="small">
+                            <div class="d-flex justify-content-between">
+                                <span>Status:</span>
+                                <span class="badge bg-success" id="agentStatus">Online</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span>Pesan:</span>
+                                <span id="messageCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary btn-sm" id="clearMemoryBtn">
+                        <i class="fas fa-trash me-1"></i>Hapus Riwayat
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" id="exportChatBtn">
+                        <i class="fas fa-download me-1"></i>Export Chat
+                    </button>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="mt-4">
+                    <h6 class="small text-muted">Aksi Cepat:</h6>
+                    <div class="d-grid gap-1">
+                        <button class="btn btn-outline-secondary btn-sm quick-action" 
+                                data-message="Hitung 25 * 15 + 100">
+                            <i class="fas fa-calculator me-1"></i>Kalkulasi
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm quick-action" 
+                                data-message="Tampilkan cuaca hari ini">
+                            <i class="fas fa-cloud me-1"></i>Cuaca
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm quick-action" 
+                                data-message="Cari informasi tentang Python programming">
+                            <i class="fas fa-search me-1"></i>Pencarian
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Chat Area -->
+            <div class="col-md-9 col-lg-10 main-content p-0">
+                <!-- Header -->
+                <div class="chat-header p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">Chat dengan {{ agent_name }}</h4>
+                            <small class="text-muted">AI Personal Assistant - Siap membantu Anda</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary me-2" id="currentModel">OpenAI GPT</span>
+                            <span class="badge bg-secondary" id="currentPersona">Personal</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages -->
+                <div class="chat-messages p-3" id="chatMessages">
+                    <div class="message assistant-message">
+                        <div class="message-content">
+                            <i class="fas fa-robot message-icon"></i>
+                            <div class="message-text">
+                                Halo! Saya {{ agent_name }}, asisten AI pribadi Anda. Saya siap membantu dengan berbagai tugas seperti:
+                                <ul class="mt-2 mb-0">
+                                    <li>Kalkulasi dan perhitungan matematis</li>
+                                    <li>Pencarian informasi di web</li>
+                                    <li>Manajemen file dan folder</li>
+                                    <li>Informasi cuaca</li>
+                                    <li>Dan banyak lagi!</li>
+                                </ul>
+                                Bagaimana saya bisa membantu Anda hari ini?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Indicator -->
+                <div class="text-center p-3" id="loadingIndicator" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="mt-2">Agent sedang memproses...</div>
+                </div>
+                
+                <!-- Message Input -->
+                <div class="message-input p-3 border-top">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" 
+                               placeholder="Ketik pesan Anda di sini..." 
+                               autocomplete="off">
+                        <button class="btn btn-primary" type="button" id="sendButton">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Tekan Enter untuk mengirim pesan</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
